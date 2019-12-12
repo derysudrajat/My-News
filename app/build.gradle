@@ -10,9 +10,12 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        // Config
+        /**
+         * Configure your API request here, Register or login to get
+         * your API KEY on https://newsapi.org/
+         */
         buildConfigField "String", "NEWS_BASE_URL", "\"https://newsapi.org/v2/\""
-        buildConfigField "String", "API_KEY", "\"0932a883e85249b78bb806b8001de67a\""
+        buildConfigField "String", "API_KEY", "\"YOUR_API_KEY_HERE\""
     }
     buildTypes {
         release {
