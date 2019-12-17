@@ -5,4 +5,7 @@
     <string name="image_news">Image News</string>
     <string name="judul">Judul</string>
     <string name="penulis">Penulis</string>
+    <string name="no_news">There\'s no news about</string>
+    <string name="no_connection">No Connection</string>
+    <string name="cant_load_data">Can\'t Load Data</string>
 </resources>

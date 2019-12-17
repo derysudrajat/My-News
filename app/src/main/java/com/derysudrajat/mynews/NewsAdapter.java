@@ -28,6 +28,10 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         this.newsList = newsList;
     }
 
+    List<News> getNewsList() {
+        return newsList;
+    }
+
     void clear() {
         int size = newsList.size();
         newsList.clear();

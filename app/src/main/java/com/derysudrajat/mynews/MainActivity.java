@@ -1,11 +1,13 @@
 package com.derysudrajat.mynews;
 
+import android.annotation.SuppressLint;
 import android.app.SearchManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,15 +29,18 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String NEWS_KEY = "news_key";
+    private final ApiInterface apiService = ApiClient.getClient().create(ApiInterface.class);
     @BindView(R.id.recycler_news)
     RecyclerView rvNews;
-    private final ApiInterface apiService = ApiClient.getClient().create(ApiInterface.class);
-    private List<News> newsList;
-    private NewsAdapter newsAdapter;
     @BindView(R.id.progressBar)
     ProgressBar progressBar;
     @BindView(R.id.swipe_refresh)
     SwipeRefreshLayout refreshLayout;
+    @BindView(R.id.tv_no_query)
+    TextView tvNoQuery;
+    private List<News> newsList;
+    private NewsAdapter newsAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +48,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         initView();
-        loadNews();
+        if (savedInstanceState == null) {
+            loadNews();
+        } else {
+            onRestoreInstanceState(savedInstanceState);
+        }
 
         refreshLayout.setOnRefreshListener(() -> {
             newsAdapter.clear();
@@ -61,13 +70,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadNews() {
         showLoading(true);
-        Call<NewsItems> call = apiService.getNewsHeadlines("id", "sports", BuildConfig.API_KEY);
+        Call<NewsItems> call = apiService.getNewsHeadlines("id", "sport", BuildConfig.API_KEY);
         newsList = new ArrayList<>();
         call.enqueue(new Callback<NewsItems>() {
             @Override
             public void onResponse(@NonNull Call<NewsItems> call, @NonNull Response<NewsItems> response) {
                 if (response.body() != null) {
                     newsList = response.body().getNewsList();
+                    tvNoQuery.setVisibility(View.GONE);
                 }
                 newsAdapter.setNewsList(newsList);
                 rvNews.setAdapter(newsAdapter);
@@ -75,9 +85,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(@NonNull Call<NewsItems> call,@NonNull Throwable t) {
-                Toast.makeText(MainActivity.this, "Can't Load Data", Toast.LENGTH_SHORT).show();
-
+            public void onFailure(@NonNull Call<NewsItems> call, @NonNull Throwable t) {
+                Toast.makeText(MainActivity.this, R.string.cant_load_data, Toast.LENGTH_SHORT).show();
+                tvNoQuery.setVisibility(View.VISIBLE);
+                tvNoQuery.setText(R.string.no_connection);
+                showLoading(false);
             }
         });
 
@@ -88,10 +100,16 @@ public class MainActivity extends AppCompatActivity {
         Call<NewsItems> call = apiService.getNews(search, BuildConfig.API_KEY);
         newsList = new ArrayList<>();
         call.enqueue(new Callback<NewsItems>() {
+            @SuppressLint("SetTextI18n")
             @Override
             public void onResponse(@NonNull Call<NewsItems> call, @NonNull Response<NewsItems> response) {
                 if (response.body() != null) {
                     newsList = response.body().getNewsList();
+                    tvNoQuery.setVisibility(View.GONE);
+                }
+                if (newsList.size() == 0) {
+                    tvNoQuery.setVisibility(View.VISIBLE);
+                    tvNoQuery.setText(getString(R.string.no_news) + search);
                 }
                 newsAdapter.setNewsList(newsList);
                 rvNews.setAdapter(newsAdapter);
@@ -100,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(@NonNull Call<NewsItems> call, @NonNull Throwable t) {
-                Toast.makeText(MainActivity.this, "Can't Load Data", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, R.string.cant_load_data, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -138,5 +156,20 @@ public class MainActivity extends AppCompatActivity {
         } else {
             progressBar.setVisibility(View.GONE);
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(NEWS_KEY, new ArrayList<>(newsAdapter.getNewsList()));
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        List<News> list;
+        list = savedInstanceState.getParcelableArrayList(NEWS_KEY);
+        newsAdapter.setNewsList(list);
+        rvNews.setAdapter(newsAdapter);
     }
 }
